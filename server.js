@@ -20,6 +20,7 @@ if (process.env.DATABASE_URL) {
 // visit statistics) into the organisational data plane — never raw tables.
 const publishUrl = process.env.VMNODES_API_URL;
 const publishToken = process.env.VMNODES_PUBLISH_TOKEN;
+const APP_NAME = process.env.VMNODES_APP_NAME || "hello";
 if (pool && publishUrl && publishToken) {
   const call = (path, body) => fetch(publishUrl + path, {
     method: "POST",
@@ -29,7 +30,7 @@ if (pool && publishUrl && publishToken) {
   const publish = async () => {
     try {
       await call("/v1/publish/entities", {
-        entity: "hello.visit-stats",
+        entity: `${APP_NAME}.visit-stats`,
         description: "Visit counts for the hello application, per environment.",
         classification: "internal",
         queryableFields: [
@@ -40,7 +41,7 @@ if (pool && publishUrl && publishToken) {
       });
       const r = await pool.query("SELECT env, count(*)::int AS n, max(at) AS last FROM visits GROUP BY env");
       await call("/v1/publish/records", {
-        entity: "hello.visit-stats",
+        entity: `${APP_NAME}.visit-stats`,
         mode: "snapshot",
         records: r.rows.map((row) => ({
           recordKey: row.env,
