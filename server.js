@@ -68,24 +68,6 @@ if (pool && publishUrl && publishToken) {
 }
 
 http.createServer(async (req, res) => {
-  // TEMPORARY (register H5): proves from inside a real workload container that
-  // the cloud metadata service is unreachable. Asserting the firewall rule
-  // exists is not the same as proving the packet dies. Remove after verifying.
-  if (req.url === "/probe-imds") {
-    const started = Date.now();
-    try {
-      const r = await fetch("http://169.254.169.254/metadata/instance?api-version=2021-02-01", {
-        headers: { Metadata: "true" },
-        signal: AbortSignal.timeout(5000),
-      });
-      const body = (await r.text()).slice(0, 200);
-      res.writeHead(200, { "content-type": "application/json" });
-      return res.end(JSON.stringify({ reachable: true, status: r.status, ms: Date.now() - started, body }));
-    } catch (e) {
-      res.writeHead(200, { "content-type": "application/json" });
-      return res.end(JSON.stringify({ reachable: false, error: e.name + ": " + e.message, ms: Date.now() - started }));
-    }
-  }
   if (req.url === "/health") {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ status: "ok" }));
