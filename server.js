@@ -11,8 +11,20 @@ let pool = null;
 if (process.env.DATABASE_URL) {
   const { Pool } = require("pg");
   pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  pool.query("CREATE TABLE IF NOT EXISTS visits (id serial PRIMARY KEY, env text NOT NULL, at timestamptz NOT NULL DEFAULT now())")
-    .catch((e) => console.error("migration failed:", e.message));
+  // Retry with backoff: at VM boot this container can win the race against
+  // the database container, and a one-shot migration turns that into noise.
+  (async () => {
+    for (let attempt = 1; attempt <= 6; attempt++) {
+      try {
+        await pool.query("CREATE TABLE IF NOT EXISTS visits (id serial PRIMARY KEY, env text NOT NULL, at timestamptz NOT NULL DEFAULT now())");
+        return;
+      } catch (e) {
+        if (attempt === 6) return console.error("migration failed after retries:", e.message);
+        console.warn(`migration attempt ${attempt} failed (${e.message}); retrying in ${attempt * 5}s`);
+        await new Promise((r) => setTimeout(r, attempt * 5000));
+      }
+    }
+  })();
 }
 
 // ---- VMnodes publication contract v1 ----------------------------------------
