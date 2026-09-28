@@ -6,6 +6,10 @@ const http = require("node:http");
 const VERSION = "v1";
 const port = Number(process.env.PORT ?? 3000);
 const env = process.env.RUNBOX_ENVIRONMENT ?? "unknown";
+// Which build is this? The image sets BUILD_COMMIT to the full git commit it was
+// built from, and /health reports it so the platform can check it against its
+// own record. Unset means null, never a made-up value.
+const BUILD_COMMIT = process.env.BUILD_COMMIT || null;
 
 let pool = null;
 if (process.env.DATABASE_URL) {
@@ -70,7 +74,7 @@ if (pool && publishUrl && publishToken) {
 http.createServer(async (req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ status: "ok" }));
+    res.end(JSON.stringify({ status: "ok", buildCommit: BUILD_COMMIT }));
     return;
   }
   const secret = process.env.SECRET_TEST ? "set" : "unset";
