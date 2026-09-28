@@ -4,12 +4,10 @@
 # build context can reach any layer.
 FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS build
 WORKDIR /app
-# KNOWN GAP: there is no committed package-lock.json yet, so dependency
-# versions float within package.json's ranges (pg ^8.13.0). npm runs only in this
-# build stage; the final stage copies the installed node_modules and has npm
-# removed. Replace with `npm ci` once a lockfile is committed.
-COPY package.json ./
-RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund
+# npm runs only in this build stage, from the committed lockfile; the final
+# stage copies the installed node_modules and has npm removed.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 COPY server.js ./
 
 FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
