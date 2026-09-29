@@ -1,0 +1,4 @@
+{
+  "apiVersion": "vmnodes.com/v1",
+  "publishes": ["visit-stats/v1"]
+}
