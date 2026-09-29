@@ -78,16 +78,12 @@ http.createServer(async (req, res) => {
     return;
   }
   const secret = process.env.SECRET_TEST ? "set" : "unset";
-  // Demo-only decode of the gateway identity; real apps verify it with
-  // @runbox/identity-sdk against <portal>/auth/jwks.
-  let who = "anonymous";
-  const idToken = req.headers["x-runbox-identity"];
-  if (idToken) {
-    try {
-      const payload = JSON.parse(Buffer.from(idToken.split(".")[1], "base64url").toString());
-      who = `${payload.email} roles=[${(payload.roles || []).join(",")}]`;
-    } catch { who = "bad-token"; }
-  }
+  // This app does not show who is signed in. It used to decode the gateway's
+  // identity header by hand with no signature check, and whatever an example
+  // does gets copied. Never decode the identity yourself: verify it with
+  // @vmnodes/identity (VmnodesIdentity#currentUser), as the VMnodes Builder
+  // Kit starter and walk-starter do.
+  const who = "not-shown";
   let visits = "no-database";
   if (pool) {
     try {
